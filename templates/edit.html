@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}編輯學生資料{% endblock %}
+{% block content %}
+<div class="industrial-shell">
+    <h1 class="industrial-header">編輯學生資料</h1>
+
+    <div class="industrial-toolbar">
+        <span class="meta">資料更新</span>
+        <a class="industrial-button secondary" href="{% url 'index' %}">回首頁</a>
+    </div>
+
+    <div class="industrial-form-wrap">
+        <form class="industrial-form" action="{% url 'edit' student.cID %}" method="POST">
+            {% csrf_token %}
+            <table>
+                <tr>
+                    <th>*姓名</th>
+                    <td><input type="text" id="cname" name="cname" required placeholder="請輸入姓名" value="{{ student.cName }}"></td>
+                </tr>
+                <tr>
+                    <th>*性別</th>
+                    <td>
+                        <input type="radio" id="csex_m" name="csex" value="M" {% if student.cSex == "M" %}checked{% endif %}>男
+                        <input type="radio" id="csex_f" name="csex" value="F" {% if student.cSex == "F" %}checked{% endif %}>女
+                    </td>
+                </tr>
+                <tr>
+                    <th>*生日</th>
+                    <td><input type="date" id="cbirthday" name="cbirthday" required value="{{ student.cBirthday|date:'Y-m-d' }}"></td>
+                </tr>
+                <tr>
+                    <th>*信箱</th>
+                    <td><input type="email" id="cemail" name="cemail" required placeholder="請輸入mail" value="{{ student.cEmail }}"></td>
+                </tr>
+                <tr>
+                    <th>電話</th>
+                    <td><input type="text" id="cphone" name="cphone" value="{{ student.cPhone }}"></td>
+                </tr>
+                <tr>
+                    <th>地址</th>
+                    <td><input type="text" id="caddr" name="caddr" value="{{ student.cAddr }}"></td>
+                </tr>
+                <tr>
+                    <th colspan="2" class="actions">
+                        <input type="submit" name="button" id="button" value="儲存">
+                        <input type="reset" name="button2" id="button2" value="重置">
+                    </th>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
+import dj_database_url 
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -90,7 +90,7 @@ DATABASES = {
         'charset': 'utf8mb4', 
     }
 }
-
+DATABASES["default"]=dj_database_url.parse("postgresql://ch3_13_2_render_user:w0NrqzPSv87Fsbeg218GaqgMyT6iN1SI@dpg-db1fglk9v7es73fao59g-a.oregon-postgres.render.com/ch3_13_2_render") 
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>{{errormessage}}</h1>
+    {% if result %}
+    <ul>
+    <h2>顯示學生資訊</h2>
+    {% for student in result %}
+    
+    <p> 學號: {{ student.cID }}<br>
+        姓名: {{ student.cName }}<br>
+        性別: {{ student.cSex }}<br>
+        生日: {{ student.cBirthday }}<br>
+        電子郵件: {{ student.cEmail }}<br>
+        電話: {{ student.cPhone }}<br>
+        地址: {{ student.cAddr }}
+    </p>
+    {% endfor %}
+    </ul>
+    {% endif %}
+</body>
+</html>
