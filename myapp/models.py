@@ -22,7 +22,7 @@ class Student(models.Model):
 from django.db import models
 
 # Create your models here.
-class Student(models.Model):
+class Students(models.Model):
     cID = models.AutoField(primary_key=True)
     cName = models.CharField(max_length=20, blank=False)
     cSex =  models.CharField(max_length=1, blank=False, default='F')

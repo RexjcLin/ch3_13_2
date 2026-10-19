@@ -1,193 +1,198 @@
-from django.forms.models import model_to_dict
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect
 from myapp.models import *
-from django.db.models import Avg, Sum,Q
-def test(request):
-    return HttpResponse("This is a test view.")
+from django.forms.models import model_to_dict
 # Create your views here.
+def search_list(request):
+    errormessage = ""
+    if 'cname' in request.GET:
+        name = request.GET.get('cname', '')
+        print(name)
+        result = Students.objects.filter(cName__icontains=name).order_by('-cID')
 
-def student_list(request):
-    #students = Student.objects.all()
-    #print(students)
-    #for student in students:
-    #    print(model_to_dict(student))
-    #data=Student.objects.values('cId', 'cName', 'cAddr', 'cHeight', 'cWeight')
-    #for student in data:
-    #    print(student)
-    #data=Student.objects.values('cSex').distinct()
-    #for student in data:
-    #    print(student)
-    #只取一筆資料
-    #data=Student.objects.get(cId="2")
-    #print(model_to_dict(data))
-    #有可能一筆以上資料
-    #data=Student.objects.filter(cSex="M")
+    else:
+        result = Students.objects.all().order_by('-cID')
+    if not result:
+        errormessage = "查無資料"
+    return HttpResponse(render(request, 'search_list.html', locals()))
+def search_name(request):
+    return HttpResponse(render(request, 'search_name.html', locals()))
+def index(request):
+    if 'search' in request.GET:
+        name = request.GET.get('search', '')
+        name = name.strip()
+        key = name.split()
+        #搜尋所有關鍵字在cname,cbirthday,cemail,cphone,caddr欄位
+        from django.db.models import Q
+        query = Q()
+        for k in key:
+            query |= (Q(cName__icontains=k) | Q(cBirthday__icontains=k) | Q(cEmail__icontains=k) | Q(cPhone__icontains=k) | Q(cAddr__icontains=k))
+        result = Students.objects.filter(query).order_by('cID')
+    else:
+        result = Students.objects.all().order_by('cID')
+
+    data_count = result.count()
+
+    #分頁
+    from django.core.paginator import Paginator
+    paginator = Paginator(result, 3)  # 每頁顯示3筆資料
+    page = request.GET.get('page')
+    result = paginator.get_page(page)
+
+    for student in result:
+        if student.cSex == 'M':
+            student.cSex = '男'
+        elif student.cSex == 'F':
+            student.cSex = '女'
+
+    errormessage = ""
+    if data_count == 0:
+        errormessage = "查無資料"
+
+    return HttpResponse(render(request, 'index.html', locals()))
+def post(request):
+    if request.method == "POST":
+        cname = request.POST.get('cname', '')
+        csex = request.POST.get('csex', '')
+        cbirthday = request.POST.get('cbirthday', '')
+        cemail = request.POST.get('cemail', '')
+        cphone = request.POST.get('cphone', '')
+        caddr = request.POST.get('caddr', '')
+        student = Students(
+            cName=cname,
+            cSex=csex,
+            cBirthday=cbirthday,
+            cEmail=cemail,
+            cPhone=cphone,
+            cAddr=caddr
+        )
+        student.save()
+        # 處理表單提交
+        return redirect('index')
+    else:
+        return render(request, 'post.html')
+def edit(request, cid):
+    student = Students.objects.get(cID=cid)
+    if request.method == "POST":
+        student.cName = request.POST.get('cname', '')
+        student.cSex = request.POST.get('csex', '')
+        student.cBirthday = request.POST.get('cbirthday', '')
+        student.cEmail = request.POST.get('cemail', '')
+        student.cPhone = request.POST.get('cphone', '')
+        student.cAddr = request.POST.get('caddr', '')
+        student.save()
+        return redirect('index')
+    else:
+        student = model_to_dict(student)
+        return render(request, 'edit.html', locals())
+
+def delete(request, cid):
+    # 確認學生是否存在
+    if not Students.objects.filter(cID=cid).exists():
+        return redirect('index')
+    student = Students.objects.get(cID=cid)
+    if request.method == "POST":   
+        student.delete()
+        return redirect('index')
+    else:
+        return render(request, 'delete.html', locals())
+
+def getAllItems(request):
+    result = Students.objects.all().order_by('cID')
+    for student in result:
+        print(model_to_dict(student))
+    result = list(result.values())
+    return JsonResponse(result, safe=False)
+#safe=False 允許返回非字典的 JSON 資料
+#safe=True 允許返回字典的 JSON 資料
+
+def getItem(request, id):
+    try:
+        student = Students.objects.get(cID=id)
+        result = model_to_dict(student)
+        return JsonResponse(result, safe=True)
+    except Students.DoesNotExist:
+        return JsonResponse({'error': 'Student not found'}, safe=True)
     
-    #__gte 代表大於等於，例如：
-    #data=Student.objects.filter(cSex="M", cHeight__gte=170)
-   
-    ###########################
-    #from django.db.models import Q
-    #使用 Q 物件進行複雜查詢，例如：
-    #data=Student.objects.filter(Q(cId__lt=3) | Q(cId__gte=8))
-   
-    ###########################
-    #介於4到8之間的學生資料
-    #data=Student.objects.filter(cId__range=(4, 8))
-   
-    #IN 查詢，例如：
-    #data=Student.objects.filter(cId__in=[1, 3, 5])
-    #查詢開頭為 '0918' 的學生資料
-    #data=Student.objects.filter(cPhone__startswith='0918')
-    #查詢中間有'建國'地址的學生資料
-    #data=Student.objects.filter(cAddr__contains='建國')
-    #根據生日做遞減排序(-是遞減 沒有 - 是遞增)
-    #data=Student.objects.order_by('-cBirthday')
-    #根據性別遞增 生日遞減
-    #data=Student.objects.order_by('cSex', '-cBirthday') 
-    #data=Student.objects.all()[5:]
-    #根據學生資料取得成績相加
-    #data=Scorelist.objects.aggregate(total_score=Sum('score'))
-    #根據學生國文成績做統計
-    #data=Scorelist.objects.filter(course='國文').aggregate(total_chinese_score=Sum('score'))
-    #根據個別同學的成績做統計
-    #data=Scorelist.objects.values('cID').annotate(total_score=Sum('score'))
-    #data2=Scorelist.objects.values_list('cID',).annotate(total_score=Avg('score')).filter(total_score__gte=80)
-    #data=Scorelist.objects.filter(cID__lte=5).values('cID').annotate(total_score=Sum('score'))
-    #for item in data:
-    #    print(item)
-    #print("-----")
-    #顯示小數後兩位
-    #for item in data2:
-    #    print((item[0], round(item[1], 2)))
-    # students = Student.objects.filter(cName__startswith='Bill5').exists()
-    # if not students:
-    #    Student.objects.create(cName='Bill5', cSex='M', cBirthday='2000-01-01',cPhone='0918123456',cAddr='新竹',cEmail='bill5@example.com', cHeight=180, cWeight=75)
-    #    print("Created new student Bill5")
-    # else:
-    #    print("Student Bill5 already exists.")
-    # if not students:
-    #     add=Student(cName='Bill3', cSex='M', cBirthday='2000-01-01',cPhone='0918123456',cAddr='新竹',cEmail='bill3@example.com', cHeight=180, cWeight=75)
-    #     add.save()
-    #     print("Created new student Bill3")
-    # else:
-    #     print("Student Bill3 already exists.")
-    #將cID=11的電子郵件更新為新的地址
-    # try:
-    #     updata=Student.objects.get(cID=11)
-    #     updata.cEmail='new_email@example.com'
-    #     updata.save()
-    # except Exception as e:
-    #     print(f"Error updating student with cID=11: {e}")
-    # updata=Student.objects.filter(cName='Bill1').update(cEmail='bill1X_new@example.com')
-    # 將ID大於11的學生地址更新為台北
-    # try:
-    #     updata=Student.objects.filter(cID__gte=11).update(cAddr='台北')
-    # except Exception as e:
-    #     print(f"Error updating students: {e}")
-    #單筆刪除
-    # try:
-    #     student_to_delete=Student.objects.get(cID=13)
-    #     student_to_delete.delete()
-    # except Exception as e:
-    #     print(f"Error deleting student with cID=13: {e}")
-    #多筆刪除
-    # try:
-    #     students_to_delete=Student.objects.filter(cID__gte=11)
-    #     students_to_delete.delete()
-    # except Exception as e:
-    #     print(f"Error deleting students with cID>=11: {e}")
-
-    ##################
-    # one to many
-    # add
-    # 若學生未建立，一起建立學生與成績
-    # try:
-    #     # 確認無此人
-    #     student_data = Student.objects.get(cName='王大明')
-    #     print("already exists.")
-    # except:
-    #     # 創建新學生資料
-    #     student_data = Student.objects.create(
-    #         cName='王大明', cSex='M', cBirthday='2020-08-20',
-    #         cEmail='wang@yahoo.com.tw', cPhone='09333333', cAddr='新竹',
-    #         cHeight=120, cWeight=40
-    #     )
-    #     print("created successfully.")
-        
-    #     # 創建成績資料
-    #     Scorelist.objects.create(cID=student_data, course='地理', score=60)
-    #     Scorelist.objects.create(cID=student_data, course='音樂', score=100)
-    #     print("created successfully.")
-
-    # # 若學生已建立，再建立科目成績
-    # try:
-    #     # 確認有 '王大明'
-    #     student_data = Student.objects.get(cName='王大明')
-    #     # 檢查是否已經有 '歷史' 科目
-    #     geography_exists = Scorelist.objects.filter(cID=student_data, course='歷史').exists()
-    #     if not geography_exists:
-    #         Scorelist.objects.create(cID=student_data, course='歷史', score=60)
-    #         print("History score added successfully.")
-    #     else:
-    #         print("already has a score for 'History'.")
-        
-    #     # 檢查是否已經有 '體育' 科目
-    #     pe_exists = Scorelist.objects.filter(cID=student_data, course='體育').exists()
-    #     if not pe_exists:
-    #         Scorelist.objects.create(cID=student_data, course='體育', score=100)
-    #         print("PE score added successfully.")
-    #     else:
-    #         print("already has a score for 'PE'.")
-        
-    # except:
-    #     print("not found.")
-    # search
-    # 外連鍵的scorelist中s小寫
-    # datas = Student.objects.filter(scorelist__course='國文').values(
-    #     'cID', 'cName', 'scorelist__course', 'scorelist__score')
-    # for data in datas:
-    #     print(data)
-
-    # from django.db.models import Sum,Count,Max,Min,Avg
-    # datas =  Student.objects.values_list('cID','cName').annotate(Sum('scorelist__score'), Avg('scorelist__score'))
-    # for data in datas:
-    #     print(data)
-    ##################
-    # update
-    # try:
-    #     # 確認是否存在指定名稱的學生
-    #     student_data = Student.objects.get(cName='簡奉君')
-    #     # 確認是否存在指定的課程並更新分數
-    #     course_exists = Scorelist.objects.filter(cID=student_data, course='國文').exists()
-
-    #     if course_exists:
-    #         Scorelist.objects.filter(cID=student_data, course='國文').update(score=0)
-    #         print("分數更新成功。")
-    #     else:
-    #         print("未找到該課程，無法更新分數。")
-    # except:
-    #     print("未找到該學生。")
-    # delete
-    # 刪除王大明資料與科目所有成績
-    # try:
-    #     Student.objects.get(cName='王大明').delete()
-    #     print("刪除資料成功。")
-    # except:
-    #     print("未找到該學生。")
-    
-    # 刪除王大明的某科成績
-    # try:
-    #     student_data = Student.objects.get(cName='王大明')
-    # #     # 確認是否存在指定的課程並刪除該課程成績
-    #     course_exists = Scorelist.objects.filter(cID=student_data, course='地理').exists()
-    #     if course_exists:
-    #         Scorelist.objects.filter(cID=student_data, course='地理').delete()
-    #         print("成績刪除成功。")
-    #     else:
-    #         print("未找到該課程成績，無法刪除。")
-    # except:
-    #     print("未找到該學生。")
-
-    return HttpResponse("Student list view.")
+from django.views.decorators.csrf import csrf_exempt
+#取消csrf驗證
+@csrf_exempt
+def createItem(request):
+    try:
+        if request.method == "GET":
+            cname = request.GET.get('cname', '')
+            csex = request.GET.get('csex', '')
+            cbirthday = request.GET.get('cbirthday', '')
+            cemail = request.GET.get('cemail', '')
+            cphone = request.GET.get('cphone', '')
+            caddr = request.GET.get('caddr', '')
+            print("Received GET request with parameters:")
+            print(cname, csex, cbirthday, cemail, cphone, caddr)
+        elif request.method == "POST":
+            cname = request.POST.get('cname', '')
+            csex = request.POST.get('csex', '')
+            cbirthday = request.POST.get('cbirthday', '')
+            cemail = request.POST.get('cemail', '')
+            cphone = request.POST.get('cphone', '')
+            caddr = request.POST.get('caddr', '')
+            print("Received POST request with parameters:")
+            print(cname, csex, cbirthday, cemail, cphone, caddr)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, safe=True, status=400)
+    try:
+        student = Students(
+            cName=cname,
+            cSex=csex,
+            cBirthday=cbirthday,
+            cEmail=cemail,
+            cPhone=cphone,
+            cAddr=caddr
+            )
+        student.save()
+        return JsonResponse({'success': 'Student created successfully'}, safe=True)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, safe=True, status=400)
+@csrf_exempt
+def updateItem(request, id):
+    try:
+        student = Students.objects.get(cID=id)
+    except Students.DoesNotExist:
+        return JsonResponse({'error': 'Student not found'}, safe=True, status=404)
+    try:
+        if request.method == "GET":
+             
+            cname = request.GET.get('cname', student.cName)
+            csex = request.GET.get('csex', student.cSex)
+            cbirthday = request.GET.get('cbirthday', student.cBirthday)
+            cemail = request.GET.get('cemail', student.cEmail)
+            cphone = request.GET.get('cphone', student.cPhone)
+            caddr = request.GET.get('caddr', student.cAddr)
+        elif request.method == "POST":
+            cname = request.POST.get('cname', student.cName)
+            csex = request.POST.get('csex', student.cSex)
+            cbirthday = request.POST.get('cbirthday', student.cBirthday)
+            cemail = request.POST.get('cemail', student.cEmail)
+            cphone = request.POST.get('cphone', student.cPhone)
+            caddr = request.POST.get('caddr', student.cAddr)
+        student.cName = cname
+        student.cSex = csex
+        student.cBirthday = cbirthday
+        student.cEmail = cemail
+        student.cPhone = cphone
+        student.cAddr = caddr
+        student.save()
+        return JsonResponse({'success': 'Student updated successfully'}, safe=True)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, safe=True, status=400)
+@csrf_exempt
+def deleteItem(request, id):
+    try:
+        student = Students.objects.get(cID=id)
+    except Students.DoesNotExist:
+        return JsonResponse({'error': 'Student not found'}, safe=True, status=404)
+    try:
+        student.delete()
+        return JsonResponse({'success': 'Student deleted successfully'}, safe=True)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, safe=True, status=400)

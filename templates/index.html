@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}學生資料管理系統{% endblock %}
+{% block content %}
+<div class="industrial-shell">
+    <h1 class="industrial-header">Student Records / Dashboard</h1>
+
+    <div class="industrial-toolbar">
+        <span class="meta">共有：{{ data_count }} 筆資料</span>
+        <a class="industrial-button" href="{% url 'post' %}">新增學生資料</a>
+    </div>
+
+    <div class="industrial-search">
+        <form action="" method="GET" class="console-search">
+            <span class="search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="11" cy="11" r="5.5" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M16 16L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <input type="text" id="search" name="search" class="console-input" placeholder="輸入姓名、生日、信箱、電話、地址">
+            <input type="submit" value="搜尋">
+        </form>
+    </div>
+
+    {% if errormessage %}
+        <h2 class="muted" style="text-align:center; margin: 8px 0 18px;">{{ errormessage }}</h2>
+    {% endif %}
+
+    <table class="industrial-table">
+        <tr>
+            <th>姓名</th>
+            <th>學號</th>
+            <th>性別</th>
+            <th>電話</th>
+            <th>生日</th>
+            <th>電子郵件</th>
+            <th>地址</th>
+            <th>編輯</th>
+            <th>刪除</th>
+        </tr>
+        {% for student in result %}
+        <tr>
+            <td>{{ student.cName }}</td>
+            <td>{{ student.cID }}</td>
+            <td>{{ student.cSex }}</td>
+            <td>{{ student.cPhone }}</td>
+            <td>{{ student.cBirthday|date:"Y-m-d" }}</td>
+            <td>{{ student.cEmail }}</td>
+            <td>{{ student.cAddr }}</td>
+            <td><a href="{% url 'edit' student.cID %}">編輯</a></td>
+            <td><a href="{% url 'delete' student.cID %}">刪除</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% if result.has_other_pages %}
+        <div class="industrial-pagination">
+            <a href="?page=1">回最前</a>
+            {% if result.has_previous %}
+                <a href="?page={{ result.previous_page_number }}">上一頁</a>
+            {% endif %}
+            {% for num in result.paginator.page_range %}
+                {% if num > result.number|add:'-5' and num < result.number|add:'5' %}
+                    {% if result.number == num %}
+                        <strong>{{ num }}</strong>
+                    {% else %}
+                        <a href="?page={{ num }}">{{ num }}</a>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            {% if result.has_next %}
+                <a href="?page={{ result.next_page_number }}">下一頁</a>
+            {% endif %}
+            <a href="?page={{ result.paginator.num_pages }}">到最後</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

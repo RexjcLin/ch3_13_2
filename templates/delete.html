@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}刪除學生資料{% endblock %}
+{% block content %}
+<div class="industrial-shell">
+    <h1 class="industrial-header">刪除學生資料</h1>
+
+    <div class="industrial-toolbar">
+        <span class="meta">資料移除</span>
+        <a class="industrial-button secondary" href="{% url 'index' %}">回首頁</a>
+    </div>
+
+    <div class="industrial-form-wrap">
+        <form class="industrial-form" action="{% url 'delete' student.cID %}" method="POST" onsubmit="return confirmDelete();">
+            {% csrf_token %}
+            <table>
+                <tr>
+                    <th>姓名</th>
+                    <td>{{ student.cName }}</td>
+                </tr>
+                <tr>
+                    <th>性別</th>
+                    <td>{{ student.cSex }}</td>
+                </tr>
+                <tr>
+                    <th>生日</th>
+                    <td>{{ student.cBirthday|date:'Y-m-d' }}</td>
+                </tr>
+                <tr>
+                    <th>信箱</th>
+                    <td>{{ student.cEmail }}</td>
+                </tr>
+                <tr>
+                    <th>電話</th>
+                    <td>{{ student.cPhone }}</td>
+                </tr>
+                <tr>
+                    <th>地址</th>
+                    <td>{{ student.cAddr }}</td>
+                </tr>
+                <tr>
+                    <th colspan="2" class="actions">
+                        <input type="submit" name="button" id="button" value="刪除">
+                    </th>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
+<script>
+function confirmDelete() {
+    return confirm("確定要刪除這筆資料嗎？");
+}
+</script>
+{% endblock %}

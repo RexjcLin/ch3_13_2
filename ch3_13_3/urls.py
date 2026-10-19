@@ -1,5 +1,5 @@
 """
-URL configuration for ch3_13_2 project.
+URL configuration for ch3_13_3 project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/6.0/topics/http/urls/
@@ -17,8 +17,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from myapp import views
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('test/', views.test, name='test'),
-    path('students/', views.student_list, name='student_list'),
+    path('search_list/', views.search_list, name='search_list'),
+    path('search_name/', views.search_name, name='search_name'),
+    path("index/", views.index, name='index'),
+    path('post/', views.post, name='post'),
+    path('edit/<str:cid>/', views.edit, name='edit'),
+    path('delete/<str:cid>/', views.delete, name='delete'),
+    path('getAllItems/', views.getAllItems, name='getAllItems'),
+    path('getItem/<str:id>/', views.getItem, name='getItem'),
+    path('createItem/', views.createItem, name='createItem'),
+    path('updateItem/<str:id>/', views.updateItem, name='updateItem'),
+    path('deleteItem/<str:id>/', views.deleteItem, name='deleteItem'),
 ]
